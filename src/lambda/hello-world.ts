@@ -1,4 +1,4 @@
-import { Context } from "aws-lambda";
+import { Context } from 'aws-lambda';
 
 export const handler: any = async (event: any, context: Context) => {
   console.log('Hello, world!');
