@@ -1,10 +1,12 @@
 import path from 'path';
-import { App, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
+import { App, CfnOutput, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
 import * as dynamo from 'aws-cdk-lib/aws-dynamodb';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
+import { HttpApi, HttpMethod } from 'aws-cdk-lib/aws-apigatewayv2';
+import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 
 export class MyStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps = {}) {
@@ -22,7 +24,17 @@ export class MyStack extends Stack {
       runtime: Runtime.NODEJS_LATEST,
       logRetention: RetentionDays.THREE_MONTHS,
     });
-    table.grantReadData(func);
+    table.grantReadWriteData(func);
+
+    const api = new HttpApi(this, 'Api');
+    api.addRoutes({
+      methods: [HttpMethod.GET],
+      path: '/hello',
+      integration: new HttpLambdaIntegration('hello', func),
+    });
+
+    new CfnOutput(this, 'ApiUrl', { value: api.url! });
+    
   }
 }
 
