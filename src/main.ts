@@ -1,5 +1,6 @@
 import path from 'path';
-import { App, Stack, StackProps } from 'aws-cdk-lib';
+import { App, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
+import * as dynamo from 'aws-cdk-lib/aws-dynamodb';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
@@ -9,12 +10,19 @@ export class MyStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps = {}) {
     super(scope, id, props);
 
-    new NodejsFunction(this, 'hello-world', {
+    const table = new dynamo.Table(this, 'table', {
+      partitionKey: { name: 'id', type: dynamo.AttributeType.STRING },
+      removalPolicy: RemovalPolicy.DESTROY,
+      billingMode: dynamo.BillingMode.PAY_PER_REQUEST,
+    });
+
+    const func = new NodejsFunction(this, 'hello-world', {
       entry: path.join(__dirname, 'lambda/hello-world.ts'),
       handler: 'handler',
       runtime: Runtime.NODEJS_LATEST,
       logRetention: RetentionDays.THREE_MONTHS,
     });
+    table.grantReadData(func);
   }
 }
 
